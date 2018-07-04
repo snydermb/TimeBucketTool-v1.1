@@ -41,7 +41,6 @@ class DataFilePanel extends JPanel implements ActionListener {
                         idMap.get(id).updateBuckets(line[1].trim(), line[2].trim());
                     }
                 }
-                this.setVisible(false);
                 JPanel panel = (JPanel)this.getParent();
                 TimeBucketTool mTool = (TimeBucketTool) panel.getParent().getParent().getParent();
                 mTool.afterDataPanel();

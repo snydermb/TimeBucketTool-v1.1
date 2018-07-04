@@ -4,45 +4,50 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 
 final class TimeBucketTool extends JFrame implements ActionListener {
 
     private JLabel globalPromptLabel;
-    private JLabel preDaysLabel, postDaysLabel, intervalLengthLabel, interBeforeLabel, interAfterLabel, interTypeLabel;
-    private JLabel enterPreLabel, enterPostLabel, prePostNameLabel;
-    private JLabel allPreLabel, allPostLabel, allPreWDateLabel, allPostWDateLabel;
+    private JLabel enterPreLabel, enterPostLabel;
     private JTextField globalRangeA, globalRangeB;
     private JTextField preDaysField, postDaysField, interLengthField, interBeforeField, interAfterField;
-    private JTextField enterPreField, enterPostField, preNameField, postNameField;
+    private JTextField enterPreField, enterPostField, preNameField, postNameField, globalNameField;
     private JButton globalButton, perIDButton;
     private JButton nextButton, doneButton, backButton;
     private JButton preDaysButton, postDaysButton, interLengthButton, interBeforeButton, interAfterButton;
     private JButton uniformButton, manualButton;
-    private JButton daysButton, weeksButton, monthsButton;
     private JButton enterPreButton, enterPostButton;
     private JCheckBox allPreCheck, allPostCheck, allPreWDateCheck, allPostWDateCheck;
-    private JPanel backPanel, globalPanel;
-    private JPanel optPanel1, optPanel2, optPanel3, optPanel4, optPanel5, optPanel6, optTypePanel;
+    private JPanel backPanel, globalPanel, globalNamePanel;
+    private JPanel optPanel1, optPanel2, optPanel3, optPanel4, optPanel5, optPanel6;
     private JPanel optPanel8, optPanel9;
-    private JPanel optPanel10, optPanel11;
+    private JPanel allPrePanel, allPostPanel;
 
     private IntroPanel introPanel;
+    private InterTypePanel interTypePanel;
     private DataFilePanel dataFilePanel;
     private OutPanel outPanel;
 
     private HashMap<String, IDInstance> idMap;
+    private ArrayList<String> nameList;
     private int daysPre, daysPost, interType, interLength, numPreIntervals, numPostIntervals, globalBuckets;
     private int[] pre, post;
     private String[] preNames, postNames;
-    private boolean[] allPre, allPost;
+    private boolean[] allPre = new boolean[2];
+    private boolean[] allPost = new boolean[2];
 
     TimeBucketTool() {
         //Main collection for storing IDs
         idMap = new HashMap<>();
+
+        //Main collection for storing bucket (interval) names
+        nameList = new ArrayList<>();
+
         //Set basics
-        this.setTitle("Supertool v1.0");
+        this.setTitle("TimeBucketTool v1.1");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(600,600);
 
@@ -93,31 +98,26 @@ final class TimeBucketTool extends JFrame implements ActionListener {
         globalPanel.add(nextButton);
         globalPanel.add(doneButton);
         globalPanel.setVisible(false);
+        globalNamePanel = new JPanel();
+        JLabel globalNameLabel = new JLabel("Name?");
+        globalNameField = new JTextField(10);
+        globalNamePanel.add(globalNameLabel);
+        globalNamePanel.add(globalNameField);
+        globalNamePanel.setVisible(false);
 
         //Set option panel 2
         optPanel2 = new JPanel();
-        uniformButton = new JButton("Uniformly set?");
+        uniformButton = new JButton("Uniform length?");
         uniformButton.addActionListener(this);
-        manualButton = new JButton("Manually set?");
+        manualButton = new JButton("Variable length?");
         manualButton.addActionListener(this);
         optPanel2.add(uniformButton);
         optPanel2.add(manualButton);
         optPanel2.setVisible(false);
 
         //Set interval type panel
-        optTypePanel = new JPanel();
-        interTypeLabel = new JLabel("Intervals in... ");
-        daysButton = new JButton("Days");
-        daysButton.addActionListener(this);
-        weeksButton = new JButton("Weeks");
-        weeksButton.addActionListener(this);
-        monthsButton = new JButton("Months");
-        monthsButton.addActionListener(this);
-        optTypePanel.add(interTypeLabel);
-        optTypePanel.add(daysButton);
-        optTypePanel.add(weeksButton);
-        optTypePanel.add(monthsButton);
-        optTypePanel.setVisible(false);
+        interTypePanel = new InterTypePanel();
+        interTypePanel.setVisible(false);
 
         //Set option panels 3,4,5,6, intervalType
         optPanel3 = new JPanel();
@@ -134,11 +134,11 @@ final class TimeBucketTool extends JFrame implements ActionListener {
         interAfterButton.addActionListener(this);
         interBeforeButton.addActionListener(this);
         interLengthButton.addActionListener(this);
-        preDaysLabel = new JLabel("Days PRE to begin intervals: ");
-        postDaysLabel = new JLabel("Days POST to begin intervals: ");
-        intervalLengthLabel = new JLabel("Length of each interval in specified amount: ");
-        interBeforeLabel = new JLabel("# of intervals pre: ");
-        interAfterLabel = new JLabel("# of intervals post: ");
+        JLabel preDaysLabel = new JLabel("Days PRE to begin intervals: ");
+        JLabel postDaysLabel = new JLabel("Days POST to begin intervals: ");
+        JLabel intervalLengthLabel = new JLabel("Length of each interval in specified amount: ");
+        JLabel interBeforeLabel = new JLabel("# of intervals pre: ");
+        JLabel interAfterLabel = new JLabel("# of intervals post: ");
         preDaysField = new JTextField(5);
         postDaysField = new JTextField(5);
         interLengthField = new JTextField(5);
@@ -175,58 +175,62 @@ final class TimeBucketTool extends JFrame implements ActionListener {
         enterPostField = new JTextField(5);
         enterPostButton = new JButton("Ok");
         enterPostButton.addActionListener(this);
-        prePostNameLabel = new JLabel("Name?");
+        JLabel preNameLabel = new JLabel("Name?");
+        JLabel postNameLabel = new JLabel("Name?");
         preNameField = new JTextField(10);
         postNameField = new JTextField(10);
         optPanel8.add(enterPreLabel);
         optPanel8.add(enterPreField);
-        optPanel8.add(prePostNameLabel);
+        optPanel8.add(preNameLabel);
         optPanel8.add(preNameField);
         optPanel8.add(enterPreButton);
         optPanel9.add(enterPostLabel);
         optPanel9.add(enterPostField);
-        optPanel9.add(prePostNameLabel);
+        optPanel9.add(postNameLabel);
         optPanel9.add(postNameField);
         optPanel9.add(enterPostButton);
         optPanel8.setVisible(false);
         optPanel9.setVisible(false);
 
         //Set option panel 10/11 (option for all pre/all post buckets)
-        optPanel10 = new JPanel();
-        optPanel11 = new JPanel();
-        allPreLabel = new JLabel("All pre bucket?");
-        allPreWDateLabel = new JLabel("Include KeyDate?");
-        allPostLabel = new JLabel("All post bucket?");
-        allPostWDateLabel = new JLabel("Include KeyDate?");
+        allPrePanel = new JPanel();
+        allPostPanel = new JPanel();
+        JLabel allPreLabel = new JLabel("All pre bucket?");
+        JLabel allPreWDateLabel = new JLabel("Include Dx/CPT date?");
+        JLabel allPostLabel = new JLabel("All post bucket?");
+        JLabel allPostWDateLabel = new JLabel("Include Dx/CPT date?");
         allPreCheck = new JCheckBox();
         allPreCheck.addActionListener(this);
         allPreWDateCheck = new JCheckBox();
         allPreWDateCheck.addActionListener(this);
+        allPreWDateCheck.setEnabled(false);
         allPostCheck = new JCheckBox();
         allPostCheck.addActionListener(this);
         allPostWDateCheck = new JCheckBox();
         allPostWDateCheck.addActionListener(this);
-        optPanel10.add(allPreLabel);
-        optPanel10.add(allPreCheck);
-        optPanel10.add(allPreWDateLabel);
-        optPanel10.add(allPreWDateCheck);
-        optPanel11.add(allPostLabel);
-        optPanel11.add(allPostCheck);
-        optPanel11.add(allPostWDateLabel);
-        optPanel11.add(allPostWDateCheck);
-        optPanel10.setVisible(false);
-        optPanel11.setVisible(false);
+        allPostWDateCheck.setEnabled(false);
+        allPrePanel.add(allPreLabel);
+        allPrePanel.add(allPreCheck);
+        allPrePanel.add(allPreWDateLabel);
+        allPrePanel.add(allPreWDateCheck);
+        allPostPanel.add(allPostLabel);
+        allPostPanel.add(allPostCheck);
+        allPostPanel.add(allPostWDateLabel);
+        allPostPanel.add(allPostWDateCheck);
+        allPrePanel.setVisible(false);
+        allPostPanel.setVisible(false);
 
         //Combine panels in center
         JPanel fieldPanel = new JPanel();
         fieldPanel.setLayout(new BoxLayout(fieldPanel, BoxLayout.PAGE_AXIS));
         fieldPanel.add(optPanel1);
         fieldPanel.add(globalPanel);
+        fieldPanel.add(globalNamePanel);
         fieldPanel.add(optPanel2);
-        fieldPanel.add(optPanel10);
-        fieldPanel.add(optPanel11);
+        fieldPanel.add(allPrePanel);
+        fieldPanel.add(allPostPanel);
         fieldPanel.add(optPanel3);
-        fieldPanel.add(optTypePanel);
+        fieldPanel.add(interTypePanel);
         fieldPanel.add(optPanel4);
         fieldPanel.add(optPanel5);
         fieldPanel.add(optPanel6);
@@ -243,15 +247,19 @@ final class TimeBucketTool extends JFrame implements ActionListener {
 
     void afterIntro() {
         optPanel1.setVisible(true);
-        dataFilePanel.setIdMap(introPanel.getIdMap());
+        this.idMap = introPanel.getIdMap();
+        dataFilePanel.setIdMap(idMap);
     }
     void afterDataPanel() {
+        dataFilePanel.setVisible(false);
+        this.remove(dataFilePanel);
         this.getContentPane().add(BorderLayout.SOUTH, outPanel);
-        outPanel.setGlobalBuckets(globalBuckets);
-        outPanel.setPost(post);
-        outPanel.setPre(pre);
         outPanel.setIdMap(idMap);
+        outPanel.setNameList(nameList);
         outPanel.setVisible(true);
+    }
+    void afterInterType(int interType) {
+        this.interType = interType;
     }
 
     //Bulk of the actual code
@@ -263,6 +271,9 @@ final class TimeBucketTool extends JFrame implements ActionListener {
             globalBuckets = 0;
             //And then we open up the global panel where the global fields are kept
             globalPanel.setVisible(true);
+            globalNamePanel.setVisible(true);
+            //allPrePanel.setVisible(true);
+            //allPostPanel.setVisible(true);
             backPanel.setVisible(true);
         }
         //Action for global "Next" and "Done" buttons
@@ -274,41 +285,35 @@ final class TimeBucketTool extends JFrame implements ActionListener {
             String dateA = globalRangeA.getText().trim();
             String dateB = globalRangeB.getText().trim();
             //Simple check to ensure correct 10-digit date format - will increase measures here later
-            if ((!dateA.equals("null") && dateA.length() != 10) || dateA.contains("X")) {
-                globalRangeA.setText("Reformat date");
-                globalRangeB.setText("");
-            } else if ((!dateB.equals("null") && dateB.length() != 10) || dateB.contains("X")) {
-                globalRangeA.setText("");
-                globalRangeB.setText("Reformat date");
+            if (dateIsInvalid(dateA) || dateIsInvalid(dateB)) {
+                if (dateIsInvalid(dateA)) {
+                    globalRangeA.setText("Reformat date");
+                }
+                if (dateIsInvalid(dateB)) {
+                    globalRangeB.setText("Reformat date");
+                }
             } else {
                 //If both dates are valid, create a new time bucket with the range and add to the global list
-                Calendar calA;
-                Calendar calB;
-                if (dateA.equals("null")) {
-                    calA = null;
-                } else {
-                    calA = stringToCal(dateA);
-                }
-                if (dateB.equals("null")) {
-                    calB = null;
-                } else {
-                    calB = stringToCal(dateB);
-                }
-                for (IDInstance tmp : idMap.values()) {
-                    tmp.createGlobal(calA, calB);
-                }
                 globalBuckets++;
-                globalRangeA.setText("");
-                globalRangeB.setText("");
+                Calendar calA = stringToCal(dateA);
+                Calendar calB = stringToCal(dateB);
+                String name = globalNameField.getText();
+                if (name.equals("")) {
+                    name = "GLOBAL_" + globalBuckets;
+                }
+                nameList.add(name);
+                for (IDInstance tmp : idMap.values()) {
+                    tmp.createGlobal(name, calA, calB);
+                }
                 //If user hits "next", prompt for next bucket range
                 if (e.getSource() == nextButton) {
-                    String text = globalPromptLabel.getText();
-                    int tmp = Integer.parseInt(text.substring(text.length()-3, text.length()-2));
-                    globalPromptLabel.setText("Enter time bucket #" + (tmp+1) + ": ");
+                    globalRangeA.setText("");
+                    globalRangeB.setText("");
+                    globalNameField.setText("");
+                    globalPromptLabel.setText("Enter time bucket #" + (globalBuckets+1) + ": ");
                 } else {
-                    pre = new int[0];
-                    post = new int[0];
                     globalPanel.setVisible(false);
+                    globalNamePanel.setVisible(false);
                     dataFilePanel.setVisible(true);
                 }
             }
@@ -318,18 +323,16 @@ final class TimeBucketTool extends JFrame implements ActionListener {
             optPanel1.setVisible(false);
             optPanel2.setVisible(true);
             backPanel.setVisible(true);
-            allPre = new boolean[2];
-            allPost = new boolean[2];
         }
         //PER ID OPTION CHOSEN:
         //Action for "Uniformly Set?" button
         else if (e.getSource() == uniformButton) {
             optPanel2.setVisible(false);
             backPanel.setVisible(false);
-            optPanel10.setVisible(true);
-            optPanel11.setVisible(true);
+            allPrePanel.setVisible(true);
+            allPostPanel.setVisible(true);
             optPanel3.setVisible(true);
-            optTypePanel.setVisible(true);
+            interTypePanel.setVisible(true);
             optPanel4.setVisible(true);
             optPanel5.setVisible(true);
             optPanel6.setVisible(true);
@@ -353,27 +356,6 @@ final class TimeBucketTool extends JFrame implements ActionListener {
                 postDaysField.setEditable(false);
             }
         }
-        //Action for "Days" button
-        else if (e.getSource() == daysButton) {
-            interType = Calendar.DATE;
-            daysButton.setSelected(true);
-            weeksButton.setVisible(false);
-            monthsButton.setVisible(false);
-        }
-        //Action for "Weeks" button
-        else if (e.getSource() == weeksButton) {
-            interType = Calendar.WEEK_OF_YEAR;
-            weeksButton.setSelected(true);
-            daysButton.setVisible(false);
-            monthsButton.setVisible(false);
-        }
-        //Action for "Months" button
-        else if (e.getSource() == monthsButton) {
-            interType = Calendar.MONTH;
-            monthsButton.setSelected(true);
-            daysButton.setVisible(false);
-            weeksButton.setVisible(false);
-        }
         //Action for "Interval Length" button
         else if (e.getSource() == interLengthButton) {
             String text = interLengthField.getText();
@@ -394,7 +376,7 @@ final class TimeBucketTool extends JFrame implements ActionListener {
                 interBeforeField.setEditable(false);
             }
         }
-        //Action for "Post Intervals - Done" button
+        //Action for "Post Intervals" button
         else if (e.getSource() == interAfterButton) {
             String text = interAfterField.getText();
             if (isInteger(text)) {
@@ -404,21 +386,17 @@ final class TimeBucketTool extends JFrame implements ActionListener {
                 if (optPanel4.isVisible()) {
                     interAfterButton.setVisible(false);
                     interAfterField.setEditable(false);
-                    dataFilePanel.setVisible(true);
-                    backPanel.setVisible(false);
-                    for (int i = 0; i < pre.length; i++) {
-                        pre[i] = interLength;
-                    }
-                    for (int i = 0; i < post.length; i++) {
-                        post[i] = interLength;
-                    }
+                    uniformLengths(pre);
+                    uniformLengths(post);
+                    uniformNames(preNames, "PRE_");
+                    uniformNames(postNames, "POST_");
                     for (IDInstance tmp : idMap.values()) {
                         tmp.createBuckets(daysPre, daysPost, interType, pre, post, preNames, postNames, allPre, allPost);
                     }
+                    dataFilePanel.setVisible(true);
                 } else {
                     optPanel5.setVisible(false);
                     optPanel6.setVisible(false);
-                    backPanel.setVisible(false);
                     optPanel8.setVisible(true);
                     optPanel9.setVisible(true);
                 }
@@ -430,19 +408,19 @@ final class TimeBucketTool extends JFrame implements ActionListener {
             optPanel2.setVisible(false);
             backPanel.setVisible(false);
             optPanel3.setVisible(true);
-            optPanel10.setVisible(true);
-            optPanel11.setVisible(true);
-            optTypePanel.setVisible(true);
+            allPrePanel.setVisible(true);
+            allPostPanel.setVisible(true);
+            interTypePanel.setVisible(true);
             optPanel5.setVisible(true);
             optPanel6.setVisible(true);
         }
         //Action for "Enter pre intervals" button
         else if (e.getSource() == enterPreButton) {
-            updateIntervalArray(pre, numPreIntervals, enterPreButton, enterPreLabel, enterPreField);
+            updateIntervalArray(pre, preNames, numPreIntervals, enterPreButton, enterPreLabel, enterPreField, preNameField);
         }
         //Action for "Enter post intervals" button
         else if (e.getSource() == enterPostButton) {
-            if (updateIntervalArray(post, numPostIntervals, enterPostButton, enterPostLabel, enterPostField)) {
+            if (updateIntervalArray(post, postNames, numPostIntervals, enterPostButton, enterPostLabel, enterPostField, postNameField)) {
                 for (IDInstance tmp : idMap.values()) {
                     tmp.createBuckets(daysPre, daysPost, interType, pre, post, preNames, postNames, allPre, allPost);
                 }
@@ -451,25 +429,44 @@ final class TimeBucketTool extends JFrame implements ActionListener {
         }
         //Action for "AllPre" check
         else if (e.getSource() == allPreCheck) {
+            nameList.add("ALLPRE");
             allPre[0] = allPreCheck.isSelected();
+            allPreCheck.setEnabled(false);
+            allPreWDateCheck.setEnabled(true);
         }
         //Action for "AllPreWDate" check
         else if (e.getSource() == allPreWDateCheck) {
+            if (nameList.contains("ALLPRE")) {
+                nameList.remove("ALLPRE");
+            }
+            nameList.add("ALLPRE+DX");
             allPre[1] = allPreWDateCheck.isSelected();
+            allPreWDateCheck.setEnabled(false);
         }
         //Action for "AllPost" check
         else if (e.getSource() == allPostCheck) {
+            nameList.add("ALLPOST");
             allPost[0] = allPostCheck.isSelected();
+            allPostCheck.setEnabled(false);
+            allPostWDateCheck.setEnabled(true);
         }
         //Action for "AllPostWDate" check
         else if (e.getSource() == allPostWDateCheck) {
+            if (nameList.contains("ALLPOST")) {
+                nameList.remove("ALLPOST");
+            }
+            nameList.add("ALLPOST+DX");
             allPost[1] = allPostWDateCheck.isSelected();
+            allPostWDateCheck.setEnabled(false);
         }
         //Action for "Back" button
         else if (e.getSource() == backButton) {
             //If we're on the global panel, hide that one and then revert back to 1
             if (globalPanel.isVisible()) {
                 globalPanel.setVisible(false);
+                globalNamePanel.setVisible(false);
+                allPrePanel.setVisible(false);
+                allPostPanel.setVisible(false);
                 backPanel.setVisible(false);
                 optPanel1.setVisible(true);
             }
@@ -481,17 +478,30 @@ final class TimeBucketTool extends JFrame implements ActionListener {
             }
         }
     }
-    private boolean updateIntervalArray(int[] arr, int numIntervals, JButton button, JLabel label, JTextField field) {
+    private boolean updateIntervalArray(int[] intArr, String[] nameArr, int numIntervals, JButton button, JLabel label,
+                                        JTextField numField, JTextField nameField) {
         String text = label.getText();
-        String num = field.getText();
+        String num = numField.getText();
+        String name = nameField.getText();
         int tmp = Integer.parseInt(text.substring(text.length()-3, text.length()-2));
-        arr[tmp-1] = Integer.parseInt(num);
+        intArr[tmp-1] = Integer.parseInt(num);
+        if (name.equals("")) {
+            if (nameField == preNameField) {
+                name = "PRE_" + tmp;
+            } else {
+                name = "POST_" + tmp;
+            }
+        }
+        nameArr[tmp-1] = name;
+        nameList.add(name);
         if (tmp == numIntervals) {
-            field.setEditable(false);
+            numField.setEditable(false);
+            nameField.setEditable(false);
             button.setVisible(false);
             return true;
         } else {
-            field.setText("");
+            numField.setText("");
+            nameField.setText("");
             if (label == enterPreLabel) {
                 label.setText("Enter PRE interval length #" + (tmp+1) + ": ");
             } else {
@@ -499,6 +509,20 @@ final class TimeBucketTool extends JFrame implements ActionListener {
             }
             return false;
         }
+    }
+    private void uniformLengths(int[] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = interLength;
+        }
+    }
+    private void uniformNames(String[] arr, String prefix) {
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = prefix + (i+1);
+            nameList.add(prefix + (i+1));
+        }
+    }
+    private static boolean dateIsInvalid(String date) {
+        return ((!date.equals("null") && date.length() != 10) || date.contains("X"));
     }
     private static boolean isInteger(String cur) {
         try {
