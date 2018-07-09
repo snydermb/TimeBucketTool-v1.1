@@ -47,7 +47,7 @@ class IDInstance {
         beginDate.add(Calendar.DATE, -1);
         endDate.add(Calendar.DATE, daysPost);
         endDate.add(Calendar.DATE, 1);
-        bucketMap.put("Dx", new TimeBucket(beginDate, endDate));
+        bucketMap.put("Dx/CPT", new TimeBucket(beginDate, endDate));
         beginDate.add(Calendar.DATE, 1);
         for (int i = 0; i < pre.length; i++) {
             name = preNames[i];

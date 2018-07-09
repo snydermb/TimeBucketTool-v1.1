@@ -46,7 +46,7 @@ class InterTypePanel extends JPanel implements ActionListener {
             weeksButton.setVisible(false);
         }
         JPanel panel = (JPanel)this.getParent();
-        TimeBucketTool mTool = (TimeBucketTool) panel.getParent().getParent().getParent();
+        TimeBucketTool mTool = (TimeBucketTool) panel.getParent().getParent().getParent().getParent();
         mTool.afterInterType(interType);
     }
 }
